@@ -1,7 +1,7 @@
 {
-  "name": "casa-yaiza-v2-1",
+  "name": "casa-yaiza-v2-2",
   "private": true,
-  "version": "2.1.0",
+  "version": "2.2.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
