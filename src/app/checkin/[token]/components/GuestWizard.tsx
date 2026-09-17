@@ -1,6 +1,6 @@
 'use client'
 import { useMemo, useRef, useState, useEffect } from 'react'
-
+import { COUNTRY_OPTIONS } from './countries'
 type Lang='es'|'en'|'de'; type Role='holder'|'adult'|'minor'
 type Reservation={booking_code:string;check_in:string;check_out:string;guest_count:number;language:Lang}
 type Guest={role:Role;firstName:string;surname1:string;surname2:string;sex:string;birthDate:string;nationality:string;documentType:string;documentNumber:string;documentSupport:string;address:string;locality:string;country:string;phone:string;email:string;relationshipToAdult:string;signatureData:string}
@@ -24,5 +24,105 @@ const T:any={
 
 function Signature({value,onChange,label,clear}:{value:string,onChange:(v:string)=>void,label:string,clear:string}){const ref=useRef<HTMLCanvasElement>(null);const drawing=useRef(false);useEffect(()=>{const c=ref.current;if(!c)return;const ctx=c.getContext('2d');if(ctx){ctx.lineWidth=2;ctx.lineCap='round';ctx.strokeStyle='#17212b'}},[]);const pos=(e:any)=>{const c=ref.current!;const r=c.getBoundingClientRect();const p=e.touches?.[0]||e;return{x:(p.clientX-r.left)*(c.width/r.width),y:(p.clientY-r.top)*(c.height/r.height)}};const start=(e:any)=>{e.preventDefault();drawing.current=true;const p=pos(e),ctx=ref.current!.getContext('2d')!;ctx.beginPath();ctx.moveTo(p.x,p.y)};const move=(e:any)=>{if(!drawing.current)return;e.preventDefault();const p=pos(e),ctx=ref.current!.getContext('2d')!;ctx.lineTo(p.x,p.y);ctx.stroke()};const end=()=>{if(!drawing.current)return;drawing.current=false;onChange(ref.current!.toDataURL('image/png'))};return <div><label>{label} *</label><canvas ref={ref} width={700} height={180} className="signature" onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end} onTouchStart={start} onTouchMove={move} onTouchEnd={end}/><button type="button" className="secondary" onClick={()=>{ref.current?.getContext('2d')?.clearRect(0,0,700,180);onChange('')}}>{clear}</button>{value&&<span className="ok"> ✓</span>}</div>}
 
-export default function GuestWizard({token,reservation}:{token:string;reservation:Reservation}){const [lang,setLang]=useState<Lang>(reservation.language||'es');const s=T[lang];const [step,setStep]=useState(0);const [adultCount,setAdultCount]=useState(1);const [minorCount,setMinorCount]=useState(reservation.guest_count-1);const [guests,setGuests]=useState<Guest[]>([]);const [idx,setIdx]=useState(0);const [msg,setMsg]=useState('');const [sending,setSending]=useState(false);const build=()=>{if(adultCount+minorCount!==reservation.guest_count){setMsg(s.mismatch);return}setGuests([blank('holder'),...Array.from({length:adultCount-1},()=>blank('adult')),...Array.from({length:minorCount},()=>blank('minor'))]);setIdx(0);setMsg('');setStep(2)};const update=(k:keyof Guest,v:string)=>setGuests(gs=>gs.map((g,i)=>i===idx?{...g,[k]:v}:g));const valid=(g:Guest)=>g.firstName&&g.surname1&&g.birthDate&&(g.role==='minor'?g.relationshipToAdult:(g.nationality&&g.documentType&&g.documentNumber&&g.address&&g.locality&&g.country&&g.signatureData));const nextGuest=()=>{if(!valid(guests[idx])){setMsg(s.required);return}setMsg('');if(idx<guests.length-1)setIdx(idx+1);else setStep(3)};const submit=async()=>{if(guests.some(g=>!valid(g))){setMsg(s.required);setStep(2);setIdx(Math.max(0,guests.findIndex(g=>!valid(g))));return}setSending(true);setMsg('');const r=await fetch('/api/checkin/submit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,totalGuests:reservation.guest_count,adultCount,minorCount,guests})});const j=await r.json();setSending(false);if(!r.ok){setMsg(j.error||'Error');return}setStep(4)};const g=guests[idx];return <main className="wrap"><div className="hero"/><div className="card"><div className="top"><div><b>CASA YAIZA</b><div className="muted">Arrecife · Lanzarote</div></div><div className="lang">{(['es','en','de'] as Lang[]).map(x=><button key={x} className={lang===x?'langOn':'langOff'} onClick={()=>setLang(x)}>{x.toUpperCase()}</button>)}</div></div>{step===0&&<><h1>{s.booking}</h1><p>{s.intro}</p><div className="grid"><div><b>{s.ref}</b><p>{reservation.booking_code}</p></div><div><b>{s.cin}</b><p>{reservation.check_in}</p></div><div><b>{s.cout}</b><p>{reservation.check_out}</p></div><div><b>{s.num}</b><p>{reservation.guest_count}</p></div></div><h3>{s.correct}</h3><button onClick={()=>setStep(1)}>{s.confirm}</button> <button className="secondary" onClick={()=>setMsg(s.bookingProblem)}>{s.error}</button>{msg&&<p className="notice">{msg}</p>}<p className="muted">🔒 {s.safe}</p></>}{step===1&&<><h1>{s.split}</h1><p>{s.splitIntro}</p><div className="grid"><div><label>{s.adults}</label><input type="number" min={1} max={reservation.guest_count} value={adultCount} onChange={e=>setAdultCount(Number(e.target.value))}/></div><div><label>{s.minors}</label><input type="number" min={0} max={reservation.guest_count-1} value={minorCount} onChange={e=>setMinorCount(Number(e.target.value))}/></div></div><p><b>{adultCount+minorCount} / {reservation.guest_count}</b></p>{msg&&<p className="notice">{msg}</p>}<button onClick={build}>{s.continue}</button> <button className="secondary" onClick={()=>setStep(0)}>{s.back}</button></>}{step===2&&g&&<><div className="badge">{idx+1} / {guests.length}</div><h1>{g.role==='holder'?s.holder:g.role==='adult'?s.adult:s.minor}</h1><h3>{s.personal}</h3><div className="formgrid"><Field l={s.first} v={g.firstName} set={v=>update('firstName',v)} req/><Field l={s.sur1} v={g.surname1} set={v=>update('surname1',v)} req/><Field l={s.sur2} v={g.surname2} set={v=>update('surname2',v)}/><Field l={s.birth} type="date" v={g.birthDate} set={v=>update('birthDate',v)} req/><Field l={s.sex} v={g.sex} set={v=>update('sex',v)}/><Field l={s.nat} v={g.nationality} set={v=>update('nationality',v)} req={g.role!=='minor'}/>{g.role!=='minor'&&<><Field l={s.docType} v={g.documentType} set={v=>update('documentType',v)} req/><Field l={s.docNum} v={g.documentNumber} set={v=>update('documentNumber',v)} req/><Field l={s.support} v={g.documentSupport} set={v=>update('documentSupport',v)}/><Field l={s.address} v={g.address} set={v=>update('address',v)} req/><Field l={s.city} v={g.locality} set={v=>update('locality',v)} req/><Field l={s.country} v={g.country} set={v=>update('country',v)} req/><Field l={s.phone} v={g.phone} set={v=>update('phone',v)}/><Field l={s.email} type="email" v={g.email} set={v=>update('email',v)}/></>}{g.role==='minor'&&<Field l={s.relation} v={g.relationshipToAdult} set={v=>update('relationshipToAdult',v)} req/>}</div>{g.role!=='minor'&&<Signature value={g.signatureData} onChange={v=>update('signatureData',v)} label={s.signature} clear={s.clear}/>} {msg&&<p className="notice">{msg}</p>}<div className="actions"><button onClick={nextGuest}>{s.next}</button><button className="secondary" onClick={()=>{setMsg('');if(idx>0)setIdx(idx-1);else setStep(1)}}>{s.back}</button></div></>}{step===3&&<><h1>{s.review}</h1><p>{s.reviewIntro}</p>{guests.map((x,i)=><div className="review" key={i}><b>{i+1}. {x.firstName} {x.surname1}</b><span>{x.role==='holder'?s.holder:x.role==='adult'?s.adult:s.minor}</span><span>{x.birthDate}</span></div>)}{msg&&<p className="notice">{msg}</p>}<button disabled={sending} onClick={submit}>{sending?s.sending:s.submit}</button> <button className="secondary" onClick={()=>{setIdx(guests.length-1);setStep(2)}}>{s.back}</button></>}{step===4&&<div className="complete"><div className="check">✓</div><h1>{s.done}</h1><p>{s.doneText}</p><p className="muted">{reservation.booking_code}</p></div>}</div></main>}
+export default function GuestWizard({token,reservation}:{token:string;reservation:Reservation}){const [lang,setLang]=useState<Lang>(reservation.language||'es');const s=T[lang];const [step,setStep]=useState(0);const [adultCount,setAdultCount]=useState(1);const [minorCount,setMinorCount]=useState(reservation.guest_count-1);const [guests,setGuests]=useState<Guest[]>([]);const [idx,setIdx]=useState(0);const [msg,setMsg]=useState('');const [sending,setSending]=useState(false);const build=()=>{if(adultCount+minorCount!==reservation.guest_count){setMsg(s.mismatch);return}setGuests([blank('holder'),...Array.from({length:adultCount-1},()=>blank('adult')),...Array.from({length:minorCount},()=>blank('minor'))]);setIdx(0);setMsg('');setStep(2)};const update=(k:keyof Guest,v:string)=>setGuests(gs=>gs.map((g,i)=>i===idx?{...g,[k]:v}:g));const valid=(g:Guest)=>{
+  const basic = g.firstName && g.surname1 && g.birthDate && g.sex && g.nationality
+
+  if (g.role === 'minor') {
+    return basic && g.relationshipToAdult
+  }
+
+  const supportOk =
+    !['NIF', 'NIE'].includes(g.documentType) || !!g.documentSupport
+
+  return basic &&
+    g.documentType &&
+    g.documentNumber &&
+    supportOk &&
+    g.address &&
+    g.locality &&
+    g.country &&
+    g.signatureData
+}; const nextGuest=()=>{if(!valid(guests[idx])){setMsg(s.required);return}setMsg('');if(idx<guests.length-1)setIdx(idx+1);else setStep(3)};const submit=async()=>{if(guests.some(g=>!valid(g))){setMsg(s.required);setStep(2);setIdx(Math.max(0,guests.findIndex(g=>!valid(g))));return}setSending(true);setMsg('');const r=await fetch('/api/checkin/submit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,totalGuests:reservation.guest_count,adultCount,minorCount,guests})});const j=await r.json();setSending(false);if(!r.ok){setMsg(j.error||'Error');return}setStep(4)};const g=guests[idx];return <main className="wrap"><div className="hero"/><div className="card"><div className="top"><div><b>CASA YAIZA</b><div className="muted">Arrecife · Lanzarote</div></div><div className="lang">{(['es','en','de'] as Lang[]).map(x=><button key={x} className={lang===x?'langOn':'langOff'} onClick={()=>setLang(x)}>{x.toUpperCase()}</button>)}</div></div>{step===0&&<><h1>{s.booking}</h1><p>{s.intro}</p><div className="grid"><div><b>{s.ref}</b><p>{reservation.booking_code}</p></div><div><b>{s.cin}</b><p>{reservation.check_in}</p></div><div><b>{s.cout}</b><p>{reservation.check_out}</p></div><div><b>{s.num}</b><p>{reservation.guest_count}</p></div></div><h3>{s.correct}</h3><button onClick={()=>setStep(1)}>{s.confirm}</button> <button className="secondary" onClick={()=>setMsg(s.bookingProblem)}>{s.error}</button>{msg&&<p className="notice">{msg}</p>}<p className="muted">🔒 {s.safe}</p></>}{step===1&&<><h1>{s.split}</h1><p>{s.splitIntro}</p><div className="grid"><div><label>{s.adults}</label><input type="number" min={1} max={reservation.guest_count} value={adultCount} onChange={e=>setAdultCount(Number(e.target.value))}/></div><div><label>{s.minors}</label><input type="number" min={0} max={reservation.guest_count-1} value={minorCount} onChange={e=>setMinorCount(Number(e.target.value))}/></div></div><p><b>{adultCount+minorCount} / {reservation.guest_count}</b></p>{msg&&<p className="notice">{msg}</p>}<button onClick={build}>{s.continue}</button> <button className="secondary" onClick={()=>setStep(0)}>{s.back}</button></>}{step===2&&g&&<><div className="badge">{idx+1} / {guests.length}</div><h1>{g.role==='holder'?s.holder:g.role==='adult'?s.adult:s.minor}</h1><h3>{s.personal}</h3><div className="formgrid"><Field l={s.first} v={g.firstName} set={v=>update('firstName',v)} req/><Field l={s.sur1} v={g.surname1} set={v=>update('surname1',v)} req/><Field l={s.sur2} v={g.surname2} set={v=>update('surname2',v)}/><Field l={s.birth} type="date" v={g.birthDate} set={v=>update('birthDate',v)} req/>
+  <SelectField l={s.sex}
+  v={g.sex}
+  set={v => update('sex', v)}
+  options={SEX_OPTIONS}
+  lang={lang}
+  req/>
+  <SelectField
+  l={s.nat}
+  v={g.nationality}
+  set={v => update('nationality', v)}
+  options={COUNTRY_OPTIONS}
+  lang={lang}
+  req={g.role !== 'minor'}
+   />{g.role !== 'minor' && <>
+<SelectField l={s.docType}   v={g.documentType}   set={v => update('documentType', v)}   options={DOCUMENT_OPTIONS}   lang={lang}   req /><Field l={s.docNum} v={g.documentNumber} set={v=>update('documentNumber',v)} req/>
+
+{(g.documentType === 'NIF' || g.documentType === 'NIE') && (
+  <Field
+    l={s.support}
+    v={g.documentSupport}
+    set={v => update('documentSupport', v)}
+    req
+  />
+)}
+<Field l={s.address} v={g.address} set={v=>update('address',v)} req/>
+<Field l={s.city} v={g.locality} set={v=>update('locality',v)} req/>
+<SelectField
+  l={s.country}
+  v={g.country}
+  set={v => update('country', v)}
+  options={COUNTRY_OPTIONS}
+  lang={lang}
+  req
+/>
+<Field l={s.phone} v={g.phone} set={v=>update('phone',v)}/><Field l={s.email} type="email" v={g.email} set={v=>update('email',v)}/></>}{g.role==='minor'&&<Field l={s.relation} v={g.relationshipToAdult} set={v=>update('relationshipToAdult',v)} req/>}</div>{g.role!=='minor'&&<Signature value={g.signatureData} onChange={v=>update('signatureData',v)} label={s.signature} clear={s.clear}/>} {msg&&<p className="notice">{msg}</p>}<div className="actions"><button onClick={nextGuest}>{s.next}</button><button className="secondary" onClick={()=>{setMsg('');if(idx>0)setIdx(idx-1);else setStep(1)}}>{s.back}</button></div></>}{step===3&&<><h1>{s.review}</h1><p>{s.reviewIntro}</p>{guests.map((x,i)=><div className="review" key={i}><b>{i+1}. {x.firstName} {x.surname1}</b><span>{x.role==='holder'?s.holder:x.role==='adult'?s.adult:s.minor}</span><span>{x.birthDate}</span></div>)}{msg&&<p className="notice">{msg}</p>}<button disabled={sending} onClick={submit}>{sending?s.sending:s.submit}</button> <button className="secondary" onClick={()=>{setIdx(guests.length-1);setStep(2)}}>{s.back}</button></>}{step===4&&<div className="complete"><div className="check">✓</div><h1>{s.done}</h1><p>{s.doneText}</p><p className="muted">{reservation.booking_code}</p></div>}</div></main>}
 function Field({l,v,set,type='text',req=false}:{l:string,v:string,set:(v:string)=>void,type?:string,req?:boolean}){return <div><label>{l}{req?' *':''}</label><input type={type} value={v} onChange={e=>set(e.target.value)} required={req}/></div>}
+
+
+function SelectField({
+  l,
+  v,
+  set,
+  options,
+  lang,
+  req = false,
+}: {
+  l: string
+  v: string
+  set: (v: string) => void
+  options: Array<{
+    value: string
+    es: string
+    en: string
+    de: string
+  }>
+  lang: Lang
+  req?: boolean
+}) {
+  const placeholder = {
+    es: 'Seleccionar…',
+    en: 'Select…',
+    de: 'Auswählen…',
+  }
+
+  return (
+    <div>
+      <label>{l}{req ? ' *' : ''}</label>
+      <select
+        value={v}
+        onChange={e => set(e.target.value)}
+        required={req}
+      >
+        <option value="">{placeholder[lang]}</option>
+
+        {options.map(option => (
+          <option key={option.value} value={option.value}>
+            {option[lang]}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
