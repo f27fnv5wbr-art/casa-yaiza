@@ -1,26 +1,42 @@
-# Casa Yaiza v2
-Next.js + Supabase starter para panel privado, creación de reservas y enlaces de huésped con token aleatorio.
+# Casa Yaiza V2.1
 
-## Incluido
-- Login del propietario con Supabase Auth.
-- Panel privado y formulario de nueva reserva.
-- API de creación de reserva.
-- Token de 256 bits; en DB se guarda solo SHA-256.
-- Caducidad automática 48 h después del checkout.
-- Endpoint para rotar/revocar de facto el enlace.
-- Pantalla de huésped ES/EN/DE con reserva precargada.
-- Esquema SQL para `reservations` y `guests` + RLS de propietario.
-- Foto de Casa Yaiza en `/public`.
+Next.js + Supabase SSR para el panel privado de Casa Yaiza y enlaces seguros de huésped.
 
-## Conectar Supabase
-1. Crear proyecto Supabase.
-2. Ejecutar `supabase/migrations/001_schema.sql` en SQL Editor.
-3. Activar Email/Password en Authentication y crear el usuario propietario.
-4. Copiar `.env.example` a `.env.local` y completar URL, anon key y service role key.
-5. `npm install && npm run dev`.
+## Seguridad de esta versión
 
-## Importante antes de producción
-El endpoint API usa la service-role key en servidor. Antes de usar datos reales hay que añadir verificación de sesión del propietario en las rutas `/api/*` y middleware para `/admin`; el starter deja preparada la estructura, pero no debe desplegarse con datos personales hasta implementar esa protección. Añadir también CSP/rate limiting/auditoría, política de retención, consentimiento/información RGPD y almacenamiento privado de firmas/documentos.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; no usa `service_role` ni secret key.
+- `@supabase/ssr` y sesiones de Supabase Auth almacenadas en cookies.
+- `middleware.ts` revalida la identidad con Supabase Auth y protege `/admin`.
+- Las rutas `/api/reservations*` vuelven a comprobar el usuario autenticado en servidor.
+- RLS limita reservas y huéspedes al `owner_id = auth.uid()`.
+- Los enlaces de huésped usan 256 bits aleatorios y la BD guarda solo SHA-256.
+- El huésped consulta solo campos mínimos mediante `lookup_guest_reservation`; el token debe ser válido y no estar caducado.
 
-## Próxima fase
-Completar Titular → Adultos → Menores → Revisión → Firma, guardando mediante endpoints server-side que validen el token y solo permitan la reserva asociada.
+## Variables de entorno
+
+Copia `.env.example` a `.env.local` para desarrollo. En Vercel crea las mismas variables:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://TU_PROYECTO.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+NEXT_PUBLIC_SITE_URL=https://tu-dominio.vercel.app
+```
+
+No subas `.env.local` a GitHub.
+
+## Supabase
+
+Si ya ejecutaste `001_schema.sql`, ejecuta ahora **una sola vez**:
+
+`supabase/migrations/002_v2_1_security.sql`
+
+## Desarrollo local
+
+```
+npm install
+npm run dev
+```
+
+## Antes de datos reales
+
+Esta V2.1 corrige la autenticación del propietario y elimina la service-role key del flujo. Antes de recopilar DNI/pasaportes reales todavía hay que completar el formulario de viajeros, política de privacidad/retención, almacenamiento privado de firmas/documentos, validación de acceso del huésped para escrituras, controles de abuso/rate limiting y revisión RGPD/LOPDGDD.
