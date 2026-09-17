@@ -1,4 +1,4 @@
-export const COUNTRY_OPTIONS = [const COUNTRY_OPTIONS = [
+export const COUNTRY_OPTIONS = [
   {value:'AFG',es:'Afganistán',en:'Afghanistan',de:'Afghanistan'},
   {value:'ALB',es:'Albania',en:'Albania',de:'Albanien'},
   {value:'DZA',es:'Argelia',en:'Algeria',de:'Algerien'},
