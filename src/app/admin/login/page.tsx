@@ -1,49 +1,92 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+function LoginForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [message, setMessage] = useState('')
-  const [busy, setBusy] = useState(false)
-  const search = useSearchParams()
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setBusy(true)
-    setMessage('')
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
     if (error) {
-      setMessage('No se ha podido iniciar sesión. Comprueba email y contraseña.')
-      setBusy(false)
+      setError('Email o contraseña incorrectos.')
+      setLoading(false)
       return
     }
 
-    const next = search.get('next')
-    window.location.assign(next?.startsWith('/admin') ? next : '/admin')
+    const next = searchParams.get('next')
+    router.replace(next && next.startsWith('/') ? next : '/admin')
+    router.refresh()
   }
 
   return (
-    <main className="wrap">
-      <div className="card" style={{ maxWidth: 480, margin: '60px auto' }}>
-        <h1>Casa Yaiza · Administración</h1>
-        <p className="muted">Acceso exclusivo del propietario.</p>
-        <form onSubmit={submit}>
-          <label>Email</label>
-          <input type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />
-          <label>Contraseña</label>
-          <input type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />
-          <br /><br />
-          <button disabled={busy}>{busy ? 'Entrando…' : 'Entrar'}</button>
-          {message && <p className="muted">{message}</p>}
+    <main className="page-shell">
+      <section className="card auth-card">
+        <div className="brand">Casa Yaiza</div>
+        <h1>Acceso propietario</h1>
+        <p>Inicia sesión para gestionar las reservas.</p>
+
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <label htmlFor="password">Contraseña</label>
+          <input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          {error && <p role="alert">{error}</p>}
+
+          <button type="submit" disabled={loading}>
+            {loading ? 'Entrando…' : 'Entrar'}
+          </button>
         </form>
-      </div>
+      </section>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="page-shell">
+          <section className="card auth-card">
+            <div className="brand">Casa Yaiza</div>
+            <h1>Acceso propietario</h1>
+            <p>Cargando…</p>
+          </section>
+        </main>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   )
 }
