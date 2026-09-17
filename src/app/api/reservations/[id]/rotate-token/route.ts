@@ -1,0 +1,2 @@
+import {NextResponse} from 'next/server'; import {admin} from '../../../../../lib/supabase'; import {newGuestToken,hashToken} from '../../../../../lib/token'
+export async function POST(_:Request,{params}:{params:{id:string}}){const token=newGuestToken();const {error}=await admin().from('reservations').update({guest_token_hash:hashToken(token)}).eq('id',params.id);if(error)return NextResponse.json({error:error.message},{status:400});return NextResponse.json({guest_url:`${process.env.NEXT_PUBLIC_SITE_URL}/checkin/${token}`})}
