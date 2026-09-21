@@ -41,7 +41,7 @@ export default async function AdminPage() {
             {reservations?.map(r => (
               <tr key={r.id}>
                 <td>{r.booking_code}</td><td>{r.holder_name}</td><td>{r.check_in}</td><td>{r.guest_count}</td>
-                <td>   <Link className="btn secondary" href={`/admin/reservas/${r.id}/editar`}>     Editar   </Link> </td>
+                <td><span className="badge">{labels[r.status] ?? r.status}</span></td> <td>   <Link className="btn secondary" href={`/admin/reservas/${r.id}/editar`}>     Editar   </Link> </td>
               </tr>
             ))}
             {!error && (!reservations || reservations.length === 0) &&
