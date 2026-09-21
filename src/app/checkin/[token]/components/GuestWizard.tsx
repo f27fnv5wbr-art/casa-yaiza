@@ -32,15 +32,16 @@ export default function GuestWizard({token,reservation}:{token:string;reservatio
   }
 
   const supportOk =
-    !['NIF', 'NIE'].includes(g.documentType) || !!g.documentSupport
-
-  return basic &&
+  g.documentType !== 'NIF' || !!g.documentSupport  
+    return basic &&
+    
     g.documentType &&
     g.documentNumber &&
     supportOk &&
     g.address &&
     g.locality &&
     g.country &&
+    g.phone &&    
     g.signatureData
 }; const nextGuest=()=>{if(!valid(guests[idx])){setMsg(s.required);return}setMsg('');if(idx<guests.length-1)setIdx(idx+1);else setStep(3)};const submit=async()=>{if(guests.some(g=>!valid(g))){setMsg(s.required);setStep(2);setIdx(Math.max(0,guests.findIndex(g=>!valid(g))));return}setSending(true);setMsg('');const r=await fetch('/api/checkin/submit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,totalGuests:reservation.guest_count,adultCount,minorCount,guests})});const j=await r.json();setSending(false);if(!r.ok){setMsg(j.error||'Error');return}setStep(4)};const g=guests[idx];return <main className="wrap"><div className="hero"/><div className="card"><div className="top"><div><b>CASA YAIZA</b><div className="muted">Arrecife · Lanzarote</div></div><div className="lang">{(['es','en','de'] as Lang[]).map(x=><button key={x} className={lang===x?'langOn':'langOff'} onClick={()=>setLang(x)}>{x.toUpperCase()}</button>)}</div></div>{step===0&&<>
 <div className="legalNotice">
@@ -83,7 +84,7 @@ export default function GuestWizard({token,reservation}:{token:string;reservatio
    />{g.role !== 'minor' && <>
 <SelectField l={s.docType}   v={g.documentType}   set={v => update('documentType', v)}   options={DOCUMENT_OPTIONS}   lang={lang}   req /><Field l={s.docNum} v={g.documentNumber} set={v=>update('documentNumber',v)} req/>
 
-{(g.documentType === 'NIF' || g.documentType === 'NIE') && (
+{g.documentType === 'NIF' && (
   <Field
     l={s.support}
     v={g.documentSupport}
