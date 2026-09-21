@@ -1,2 +1,21 @@
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f6f8fa;color:#17212b}.wrap{max-width:1050px;margin:auto;padding:28px}.card{background:white;border:1px solid #e5e7eb;border-radius:16px;padding:22px;margin:16px 0;box-shadow:0 4px 18px #0000000d}.hero{height:220px;background:url('/casa-yaiza.jpg') center/cover;border-radius:18px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}label{display:block;font-weight:700;margin:10px 0 5px}input,select{width:100%;padding:12px;border:1px solid #ccd3da;border-radius:9px}button,.btn{background:#176b87;color:#fff;border:0;border-radius:9px;padding:12px 18px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}.muted{color:#667085}.badge{display:inline-block;background:#e8f4f7;color:#176b87;padding:5px 9px;border-radius:999px;font-size:13px}.danger{background:#9f2d2d}.top{display:flex;justify-content:space-between;align-items:center;gap:10px}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:11px;border-bottom:1px solid #eee}@media(max-width:600px){.wrap{padding:14px}.hero{height:160px}}
 .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}.secondary{background:#eef2f5;color:#24313c;margin-top:8px}.notice{background:#fff7df;border:1px solid #f1d48b;padding:12px;border-radius:9px}.signature{width:100%;height:150px;border:1px solid #ccd3da;border-radius:9px;background:#fff;touch-action:none;display:block}.ok{font-weight:700}.actions{margin-top:16px;display:flex;gap:8px;align-items:center}.review{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;padding:12px 0;border-bottom:1px solid #eee}.lang{display:flex;gap:4px}.lang button{padding:7px 9px}.langOn{background:#176b87}.langOff{background:#eef2f5;color:#17212b}.complete{text-align:center;padding:30px 10px}.check{margin:auto;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#e6f6ee;font-size:36px}.card h1{margin-top:28px}@media(max-width:700px){.formgrid{grid-template-columns:1fr}.review{grid-template-columns:1fr}.top{align-items:flex-start}.actions{flex-wrap:wrap}}
+
+.legalNotice{
+  background:#f4f8fa;
+  border:1px solid #d7e5ea;
+  border-left:4px solid #176b87;
+  border-radius:10px;
+  padding:16px 18px;
+  margin:20px 0 26px;
+}
+
+.legalNotice h2{
+  margin:0 0 8px;
+  font-size:20px;
+}
+
+.legalNotice p{
+  margin:0;
+  line-height:1.55;
+}
