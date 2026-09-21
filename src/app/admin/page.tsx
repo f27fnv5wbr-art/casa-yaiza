@@ -36,16 +36,16 @@ export default async function AdminPage() {
         <h2>Reservas</h2>
         {error && <p>No se han podido cargar las reservas.</p>}
         <table>
-          <thead><tr><th>Reserva</th><th>Titular</th><th>Entrada</th><th>Huéspedes</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Reserva</th><th>Titular</th><th>Entrada</th><th>Huéspedes</th><th>Estado</th><th>Acciones</th></tr></thead>
           <tbody>
             {reservations?.map(r => (
               <tr key={r.id}>
                 <td>{r.booking_code}</td><td>{r.holder_name}</td><td>{r.check_in}</td><td>{r.guest_count}</td>
-                <td><span className="badge">{labels[r.status] ?? r.status}</span></td>
+                <td>   <Link className="btn secondary" href={`/admin/reservas/${r.id}/editar`}>     Editar   </Link> </td>
               </tr>
             ))}
             {!error && (!reservations || reservations.length === 0) &&
-              <tr><td colSpan={5} className="muted">Sin reservas todavía.</td></tr>}
+              <tr><td colSpan={6} className="muted">Sin reservas todavía.</td></tr>}
           </tbody>
         </table>
       </div>
