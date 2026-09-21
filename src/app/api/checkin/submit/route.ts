@@ -8,7 +8,7 @@ const guest = z.object({
   surname2: z.string().max(100).optional().default(''), sex: z.string().max(30).optional().default(''), birthDate: z.string().min(8).max(10),
   nationality: z.string().max(100).optional().default(''), documentType: z.string().max(50).optional().default(''),
   documentNumber: z.string().max(100).optional().default(''), documentSupport: z.string().max(100).optional().default(''),
-  address: z.string().max(250).optional().default(''), locality: z.string().max(150).optional().default(''), country: z.string().max(100).optional().default(''),
+  address: z.string().max(250).optional().default(''), locality: z.string().max(150).optional().default(''), postalCode: z.string().max(20).optional().default(''), country: z.string().max(100).optional().default(''),
   phone: z.string().max(60).optional().default(''), email: z.string().max(200).optional().default(''), relationshipToAdult: z.string().max(100).optional().default(''),
   signatureData: z.string().max(200000).optional().default('')
 })
