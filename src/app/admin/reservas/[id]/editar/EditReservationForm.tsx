@@ -8,26 +8,49 @@ export default function EditReservationForm({
   reservation: any
 }) {
   const [result, setResult] = useState<any>(null)
-  
-async function submit(e: any) {
-  e.preventDefault()
 
-  const f = new FormData(e.currentTarget)
-  const entries = Object.fromEntries(f.entries())
+  async function submit(e: any) {
+    e.preventDefault()
 
-  const body = {
-    ...entries,
-    guest_count: Number(entries.guest_count),
+    const f = new FormData(e.currentTarget)
+    const entries = Object.fromEntries(f.entries())
+
+    const body = {
+      ...entries,
+      guest_count: Number(entries.guest_count),
+    }
+
+    const r = await fetch(`/api/reservations/${reservation.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+
+    setResult(await r.json())
   }
 
-  const r = await fetch(`/api/reservations/${reservation.id}`, {
-    method: 'PATCH',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  })
+  async function deleteReservation() {
+    const confirmed = window.confirm(
+      '¿Seguro que quieres eliminar esta reserva? Esta acción no se puede deshacer.'
+    )
 
-  setResult(await r.json())
-}  return (
+    if (!confirmed) return
+
+    const r = await fetch(`/api/reservations/${reservation.id}`, {
+      method: 'DELETE',
+    })
+
+    const data = await r.json()
+
+    if (data.ok) {
+      window.location.href = '/admin'
+      return
+    }
+
+    setResult(data)
+  }
+
+  return (
     <form onSubmit={submit}>
       <div className="grid">
         <div>
@@ -95,38 +118,21 @@ async function submit(e: any) {
       <br />
 
       <button type="submit">Guardar cambios</button>
+
       <button
-  type="button"
-  className="danger"
-  onClick={deleteReservation}
-  style={{ marginLeft: 10 }}
->
-  Eliminar reserva
-</button>      
-    
-      {result?.ok && <p className="ok">Cambios guardados correctamente ✓</p>}
+        type="button"
+        className="danger"
+        onClick={deleteReservation}
+        style={{ marginLeft: 10 }}
+      >
+        Eliminar reserva
+      </button>
+
+      {result?.ok && (
+        <p className="ok">Cambios guardados correctamente ✓</p>
+      )}
+
       {result?.error && <p>{result.error}</p>}
     </form>
   )
-}
-
-async function deleteReservation() {
-  const confirmed = window.confirm(
-    '¿Seguro que quieres eliminar esta reserva? Esta acción no se puede deshacer.'
-  )
-
-  if (!confirmed) return
-
-  const r = await fetch(`/api/reservations/${reservation.id}`, {
-    method: 'DELETE',
-  })
-
-  const data = await r.json()
-
-  if (data.ok) {
-    window.location.href = '/admin'
-    return
-  }
-
-  setResult(data)
 }
