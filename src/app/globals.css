@@ -19,3 +19,22 @@
   margin:0;
   line-height:1.55;
 }
+.privacyLink{
+  background:transparent;
+  color:#176b87;
+  padding:0;
+  margin-top:12px;
+  text-decoration:underline;
+  font-weight:700;
+}.privacyInfo{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid #d7e5ea;
+  font-size:14px;
+  color:#344054;
+}
+
+.privacyInfo p{
+  margin:0 0 10px;
+  line-height:1.5;
+}
