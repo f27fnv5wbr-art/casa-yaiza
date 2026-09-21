@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-
+import EditReservationForm from './EditReservationForm'
 export default async function EditReservationPage({
   params,
 }: {
@@ -30,7 +30,7 @@ export default async function EditReservationPage({
         <p>
           {reservation.booking_code} · {reservation.holder_name}
         </p>
-      </div>
+        <EditReservationForm reservation={reservation} />      </div>
     </main>
   )
 }
