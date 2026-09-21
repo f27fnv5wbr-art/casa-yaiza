@@ -8,9 +8,27 @@ export default function EditReservationForm({
   reservation: any
 }) {
   const [result, setResult] = useState<any>(null)
+  
+async function submit(e: any) {
+  e.preventDefault()
 
-  return (
-    <form>
+  const f = new FormData(e.currentTarget)
+  const entries = Object.fromEntries(f.entries())
+
+  const body = {
+    ...entries,
+    guest_count: Number(entries.guest_count),
+  }
+
+  const r = await fetch(`/api/reservations/${reservation.id}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  setResult(await r.json())
+}  return (
+    <form onSubmit={submit}>
       <div className="grid">
         <div>
           <label>Código Airbnb</label>
@@ -78,6 +96,7 @@ export default function EditReservationForm({
 
       <button type="submit">Guardar cambios</button>
 
+      {result?.ok && <p className="ok">Cambios guardados correctamente ✓</p>}
       {result?.error && <p>{result.error}</p>}
     </form>
   )
