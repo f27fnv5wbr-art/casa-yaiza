@@ -17,7 +17,7 @@ export default async function EditReservationPage({
 
   const { data: reservation, error } = await supabase
     .from('reservations')
-    .select('id,booking_code,holder_name,check_in,check_out,guest_count,status,language')
+    .select('id,booking_code,holder_name,holder_first_name,holder_surname1,holder_phone,holder_email,contract_date,payment_type,check_in,check_out,guest_count,status,language')
     .eq('id', id)
     .single()
 
