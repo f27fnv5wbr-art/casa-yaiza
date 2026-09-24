@@ -39,7 +39,14 @@ export async function POST(request: Request) {
   const supabase = createClient(url, key, { auth: { persistSession: false } })
   const { data: paymentType, error: catalogError } = await supabase.from('ses_payment_types')
     .select('code').eq('code', '04').maybeSingle()
-  if (catalogError || !paymentType) return NextResponse.json({ error: 'Tipo de pago 04 no configurado' }, { status: 503 })
+  if (catalogError) {
+    console.error('Airbnb import payment catalog:', catalogError)
+    return NextResponse.json({
+      error: `No se pudo consultar el catálogo de pagos: ${catalogError.message}`,
+      code: catalogError.code,
+    }, { status: 503 })
+  }
+  if (!paymentType) return NextResponse.json({ error: 'Tipo de pago 04 no configurado' }, { status: 503 })
 
   const token = newGuestToken()
   const expires = new Date(`${reservation.check_out}T23:59:59Z`)
