@@ -25,6 +25,14 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
+    const { data: paymentType, error: catalogError } = await supabase
+      .from('ses_payment_types')
+      .select('code')
+      .eq('code', input.payment_type)
+      .maybeSingle()
+    if (catalogError) return NextResponse.json({ error: 'No se pudo validar el tipo de pago con el catálogo SES.' }, { status: 503 })
+    if (!paymentType) return NextResponse.json({ error: 'Selecciona un tipo de pago del catálogo SES.' }, { status: 400 })
+
     const token = newGuestToken()
     const expires = new Date(`${input.check_out}T23:59:59Z`)
     expires.setUTCHours(expires.getUTCHours() + 48)
