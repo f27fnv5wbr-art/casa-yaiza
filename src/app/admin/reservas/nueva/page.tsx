@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 type PaymentType = { code: string; description: string }
 
@@ -43,6 +44,7 @@ export default function NewReservation() {
   }
 
   return <main className="wrap"><div className="card">
+    <Link className="btn secondary" href="/admin">← Volver al panel privado</Link>
     <h1>Nueva reserva</h1>
     <form onSubmit={submit}><div className="grid">
       <div><label>Código Airbnb</label><input name="booking_code" required /></div>
