@@ -4,7 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 
 const Schema = z.object({
   booking_code: z.string().trim().min(2).max(80),
-  holder_name: z.string().trim().min(2).max(150),
+  holder_first_name: z.string().trim().min(1).max(100),
+  holder_surname1: z.string().trim().min(1).max(100),
+  holder_phone: z.string().trim().max(60),
+  holder_email: z.union([z.literal(''), z.string().email()]),
+  contract_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  payment_type: z.string().trim().min(1).max(50),
   check_in: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   check_out: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   guest_count: z.number().int().min(1).max(30),
@@ -25,6 +30,7 @@ export async function PATCH(
         { status: 400 }
       )
     }
+    if (!input.holder_phone && !input.holder_email) return NextResponse.json({ error: 'Introduce un teléfono o correo del titular.' }, { status: 400 })
 
     const supabase = await createClient()
     const {
@@ -37,10 +43,12 @@ export async function PATCH(
         { status: 401 }
       )
     }
+    const { data: paymentType, error: catalogError } = await supabase.from('ses_payment_types').select('code').eq('code', input.payment_type).maybeSingle()
+    if (catalogError || !paymentType) return NextResponse.json({ error: 'Tipo de pago no válido.' }, { status: 400 })
 
     const { data, error } = await supabase
       .from('reservations')
-      .update(input)
+      .update({ ...input, holder_name: `${input.holder_first_name} ${input.holder_surname1}` })
       .eq('id', id)
       .eq('owner_id', user.id)
       .select('id,booking_code')
