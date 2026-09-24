@@ -9,7 +9,7 @@ type Guest = {
   address: string | null; locality: string | null; postal_code: string | null
   municipality_code: string | null; country: string | null; phone: string | null; email: string | null
   minor_relationships: Record<string, string> | null; completed: boolean
-  signature_path: string | null; signature_data: string | null; created_at: string
+  has_signature: boolean; created_at: string
 }
 type Reservation = {
   id: string; booking_code: string; holder_name: string; holder_first_name: string | null
@@ -60,7 +60,7 @@ export default function Report({ reservations }: { reservations: Reservation[] }
             <Detail label="Tipo de documento" value={g.document_type} /><Detail label="Número de documento" value={g.document_number} /><Detail label="Número de soporte" value={g.document_support} />
             <Detail label="Dirección" value={g.address} /><Detail label="Localidad" value={g.locality} /><Detail label="Código postal" value={g.postal_code} /><Detail label="Código municipio" value={g.municipality_code} /><Detail label="País" value={g.country} />
             <Detail label="Teléfono" value={g.phone} /><Detail label="Email" value={g.email} />
-            <Detail label="Firma" value={g.signature_data || g.signature_path ? 'Registrada' : '—'} />
+            <Detail label="Firma" value={g.has_signature ? 'Registrada' : '—'} />
             {g.role !== 'minor' && <Detail label="Parentesco con menores (índice: código)" value={Object.entries(g.minor_relationships ?? {}).map(([minor, code]) => `${Number(minor) + 1}: ${code}`).join(', ')} />}
           </div>
         </details>)}
