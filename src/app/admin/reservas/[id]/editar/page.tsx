@@ -1,4 +1,5 @@
 import { redirect, notFound } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import EditReservationForm from './EditReservationForm'
 export default async function EditReservationPage({
@@ -26,11 +27,13 @@ export default async function EditReservationPage({
   return (
     <main className="wrap">
       <div className="card">
+        <Link className="btn secondary" href="/admin">← Volver al panel privado</Link>
         <h1>Editar reserva</h1>
         <p>
           {reservation.booking_code} · {reservation.holder_name}
         </p>
-        <EditReservationForm reservation={reservation} />      </div>
+        <EditReservationForm reservation={reservation} />
+      </div>
     </main>
   )
 }
