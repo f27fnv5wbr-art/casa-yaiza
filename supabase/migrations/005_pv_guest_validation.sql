@@ -22,6 +22,17 @@ create policy "read relationship catalog" on public.ses_relationship_types
 grant select on public.ses_relationship_types to anon, authenticated;
 revoke insert, update, delete on public.ses_relationship_types from anon, authenticated;
 
+-- Codes supplied for TIPO_PARENTESCO. Verify against a live SES catalogo
+-- response before including them in a transmitted PV/RH communication.
+insert into public.ses_relationship_types (code, description) values
+  ('PAD', 'Padre / Madre'),
+  ('TUT', 'Tutor / Tutora legal'),
+  ('AAB', 'Abuelo / Abuela'),
+  ('TIO', 'Tío / Tía'),
+  ('HER', 'Hermano / Hermana'),
+  ('OTR', 'Otros / Acompañante autorizado')
+on conflict (code) do update set description = excluded.description;
+
 create or replace function public.submit_guest_registration(token_hash text, payload jsonb)
 returns jsonb
 language plpgsql
