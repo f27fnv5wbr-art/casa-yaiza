@@ -30,7 +30,6 @@ export async function PATCH(
         { status: 400 }
       )
     }
-    if (!input.holder_phone && !input.holder_email) return NextResponse.json({ error: 'Introduce un teléfono o correo del titular.' }, { status: 400 })
 
     const supabase = await createClient()
     const {
