@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function EditReservationForm({
   reservation,
@@ -8,6 +8,10 @@ export default function EditReservationForm({
   reservation: any
 }) {
   const [result, setResult] = useState<any>(null)
+  const [paymentTypes, setPaymentTypes] = useState<Array<{ code: string; description: string }>>([])
+  useEffect(() => {
+    fetch('/api/ses/payment-types').then(r => r.json()).then(data => setPaymentTypes(data.paymentTypes || [])).catch(() => setPaymentTypes([]))
+  }, [])
 
   async function submit(e: any) {
     e.preventDefault()
@@ -63,13 +67,21 @@ export default function EditReservationForm({
         </div>
 
         <div>
-          <label>Titular</label>
+          <label>Nombre del titular</label>
           <input
-            name="holder_name"
-            defaultValue={reservation.holder_name}
+            name="holder_first_name"
+            defaultValue={reservation.holder_first_name || ''}
             required
           />
         </div>
+        <div><label>Primer apellido del titular</label><input name="holder_surname1" defaultValue={reservation.holder_surname1 || ''} required /></div>
+        <div><label>Teléfono del titular</label><input name="holder_phone" type="tel" defaultValue={reservation.holder_phone || ''} /></div>
+        <div><label>Correo del titular</label><input name="holder_email" type="email" defaultValue={reservation.holder_email || ''} /></div>
+        <div><label>Fecha de formalización</label><input name="contract_date" type="date" defaultValue={reservation.contract_date || ''} required /></div>
+        <div><label>Tipo de pago</label><select name="payment_type" defaultValue={reservation.payment_type || ''} required>
+          <option value="">Selecciona un tipo de pago</option>
+          {paymentTypes.map(type => <option key={type.code} value={type.code}>{type.description}</option>)}
+        </select></div>
 
         <div>
           <label>Entrada</label>
