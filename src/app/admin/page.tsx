@@ -29,6 +29,7 @@ export default async function AdminPage() {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <Link className="btn" href="/admin/reservas/nueva">+ Nueva reserva</Link>
+          <Link className="btn secondary" href="/admin/informe">Informe de huéspedes</Link>
           <LogoutButton />
         </div>
       </div>
