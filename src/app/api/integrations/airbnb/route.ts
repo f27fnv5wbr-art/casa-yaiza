@@ -40,9 +40,13 @@ export async function POST(request: Request) {
   const { data: paymentType, error: catalogError } = await supabase.from('ses_payment_types')
     .select('code').eq('code', '04').maybeSingle()
   if (catalogError) {
-    console.error('Airbnb import payment catalog:', catalogError)
+    const invalidHeader = /Headers\.set:.*invalid header value/i.test(catalogError.message)
+    const safeMessage = invalidHeader
+      ? 'La clave de Supabase contiene caracteres no válidos. Corrige SUPABASE_SERVICE_ROLE_KEY en Vercel.'
+      : catalogError.message.replaceAll(key, '[clave oculta]')
+    console.error('Airbnb import payment catalog:', catalogError.code, safeMessage)
     return NextResponse.json({
-      error: `No se pudo consultar el catálogo de pagos: ${catalogError.message}`,
+      error: `No se pudo consultar el catálogo de pagos: ${safeMessage}`,
       code: catalogError.code,
     }, { status: 503 })
   }
