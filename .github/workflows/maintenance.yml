@@ -1,0 +1,61 @@
+name: Mantenimiento Casa Yaiza
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '7,37 * * * *'
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  availability:
+    name: Disponibilidad web y Supabase
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/check-service.mjs
+        env:
+          SITE_URL: ${{ vars.CASA_YAIZA_SITE_URL }}
+          SUPABASE_URL: ${{ vars.CASA_YAIZA_SUPABASE_URL }}
+
+  build:
+    name: Compilación y tipos
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          NEXT_PUBLIC_SITE_URL: https://example.com
+
+  dependencies:
+    name: Auditoría de dependencias
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '17 6 * * 1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm audit --omit=dev --audit-level=high
