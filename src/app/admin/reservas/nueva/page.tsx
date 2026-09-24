@@ -48,8 +48,6 @@ export default function NewReservation() {
       <div><label>Código Airbnb</label><input name="booking_code" required /></div>
       <div><label>Nombre del titular</label><input name="holder_first_name" required /></div>
       <div><label>Primer apellido del titular</label><input name="holder_surname1" required /></div>
-      <div><label>Teléfono del titular</label><input name="holder_phone" type="tel" /></div>
-      <div><label>Correo del titular</label><input name="holder_email" type="email" /></div>
       <div><label>Fecha de formalización</label><input name="contract_date" type="date" required /></div>
       <div><label>Tipo de pago</label><select name="payment_type" required defaultValue="" disabled={loadingCatalog || !!catalogError}>
         <option value="">{loadingCatalog ? 'Cargando tipos de pago…' : 'Selecciona un tipo de pago'}</option>
@@ -60,7 +58,6 @@ export default function NewReservation() {
       <div><label>Nº huéspedes</label><input name="guest_count" type="number" min="1" required /></div>
       <div><label>Idioma inicial</label><select name="language"><option value="es">Español</option><option value="en">English</option><option value="de">Deutsch</option></select></div>
     </div><br />
-      <p className="muted">El titular debe facilitar al menos teléfono o correo electrónico.</p>
       {catalogError && <p role="alert">{catalogError}</p>}
       <button disabled={loadingCatalog || !!catalogError}>Crear reserva y generar enlace</button>
     </form>

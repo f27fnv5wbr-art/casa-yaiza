@@ -7,8 +7,6 @@ const Schema = z.object({
   booking_code: z.string().trim().min(2).max(80),
   holder_first_name: z.string().trim().min(1).max(100),
   holder_surname1: z.string().trim().min(1).max(100),
-  holder_phone: z.string().trim().max(60).default(''),
-  holder_email: z.union([z.literal(''), z.string().email()]).default(''),
   contract_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   payment_type: z.string().trim().min(1).max(50),
   check_in: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -22,9 +20,6 @@ export async function POST(request: Request) {
     const input = Schema.parse(await request.json())
     if (input.check_out <= input.check_in) {
       return NextResponse.json({ error: 'La salida debe ser posterior a la entrada.' }, { status: 400 })
-    }
-    if (!input.holder_phone && !input.holder_email) {
-      return NextResponse.json({ error: 'Introduce un teléfono o correo del titular.' }, { status: 400 })
     }
 
     const supabase = await createClient()
