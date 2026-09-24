@@ -32,7 +32,8 @@ export async function POST(request: Request) {
   if (!reservation) return NextResponse.json({ error: 'Confirmación de Casa Yaiza no reconocida' }, { status: 422 })
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  // Secret keys are single-line tokens; Vercel paste fields may retain whitespace.
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.replace(/\s/g, '').replace(/^['"]|['"]$/g, '')
   const owner = process.env.AIRBNB_IMPORT_OWNER_ID
   if (!url || !key || !owner) return NextResponse.json({ error: 'Integración sin configurar' }, { status: 503 })
 
@@ -40,10 +41,11 @@ export async function POST(request: Request) {
   const { data: paymentType, error: catalogError } = await supabase.from('ses_payment_types')
     .select('code').eq('code', '04').maybeSingle()
   if (catalogError) {
-    const invalidHeader = /Headers\.set:.*invalid header value/i.test(catalogError.message)
+    const invalidHeader = /Headers\.set:[\s\S]*invalid header value/i.test(catalogError.message)
     const safeMessage = invalidHeader
       ? 'La clave de Supabase contiene caracteres no válidos. Corrige SUPABASE_SERVICE_ROLE_KEY en Vercel.'
-      : catalogError.message.replaceAll(key, '[clave oculta]')
+      : catalogError.message.replaceAll(process.env.SUPABASE_SERVICE_ROLE_KEY || key, '[clave oculta]')
+        .replaceAll(key, '[clave oculta]')
     console.error('Airbnb import payment catalog:', catalogError.code, safeMessage)
     return NextResponse.json({
       error: `No se pudo consultar el catálogo de pagos: ${safeMessage}`,
