@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     }
     for (let index = 0; index < guests.length; index++) {
       const g = guests[index]
-      if (!g.address.trim() || !g.postalCode.trim() || !g.country || (g.role !== 'minor' && !(g.phone.trim() || g.email.trim())) || (g.country === 'ESP' ? !/^\d{5}$/.test(g.municipalityCode) : !g.locality.trim())) {
+      if (!g.address.trim() || !g.postalCode.trim() || !g.country || (g.role !== 'minor' && !g.phone.trim()) || (g.country === 'ESP' ? !/^\d{5}$/.test(g.municipalityCode) : !g.locality.trim())) {
         return NextResponse.json({ error: `Domicilio o contacto incompleto para el viajero ${index + 1}.` }, { status: 400 })
       }
       if (g.role !== 'minor' && (!g.documentType || !g.documentNumber.trim() || !g.signatureData || !g.nationality || (g.documentType === 'NIF' && !g.surname2.trim()) || (['NIF','NIE'].includes(g.documentType) && !g.documentSupport.trim()))) {
