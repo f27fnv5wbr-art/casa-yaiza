@@ -15,10 +15,19 @@ export default async function GuestReportPage() {
     .eq('owner_id', user.id)
     .order('check_in', { ascending: false })
 
+  // Signature images are large and sensitive. Send only their presence to the report UI.
+  const reservations = data?.map(reservation => ({
+    ...reservation,
+    guests: reservation.guests.map(({ signature_data, signature_path, ...guest }) => ({
+      ...guest,
+      has_signature: Boolean(signature_data || signature_path),
+    })),
+  })) ?? []
+
   return <main className="wrap report">
     <div className="top reportToolbar">
       <div><Link href="/admin">← Panel privado</Link><h1>Informe de huéspedes</h1><p className="muted">Casa Yaiza · Reservas y viajeros registrados</p></div>
     </div>
-    {error ? <div className="card notice">No se pudo cargar el informe: {error.message}</div> : <Report reservations={data ?? []} />}
+    {error ? <div className="card notice">No se pudo cargar el informe: {error.message}</div> : <Report reservations={reservations} />}
   </main>
 }
