@@ -14,7 +14,25 @@ código de reserva. Una segunda entrega del mismo código devuelve `already_exis
    - `AIRBNB_IMPORT_SECRET`: cadena aleatoria larga, exclusiva para esta integración.
 3. Desplegar de nuevo Production para cargar los secretos.
 
-## Flujo de Outlook
+## Outlook.com personal → Gmail → Casa Yaiza
+
+En Outlook web, crear una regla con la condición **De** `automated@airbnb.com`
+y la acción **Redirigir a** `daciomb@gmail.com`. La redirección preserva el
+remitente original; no activar el reenvío de todo el buzón. Gmail recibirá
+solo las confirmaciones que cumplan la regla (y otros correos de Airbnb de
+ese remitente, que el importador descartará por asunto y contenido).
+
+En [Google Apps Script](https://script.google.com/), crear un proyecto y pegar
+`integrations/gmail/CasaYaizaAirbnb.gs`. En **Configuración del proyecto →
+Propiedades de secuencia**, crear `AIRBNB_IMPORT_SECRET` con el mismo secreto
+guardado en Vercel. Ejecutar `configurar()` una vez y aprobar los permisos
+Gmail, solicitudes externas y disparadores. El script comprueba los mensajes
+cada cinco minutos, registra los ya importados y reintenta los errores.
+El código de reserva único protege también contra duplicados por entregas
+repetidas. `configurar()` fija el momento inicial para no importar mensajes
+anteriores sin una revisión explícita.
+
+## Alternativa: Power Automate con cuenta compatible
 
 En Power Automate, crear un flujo con el desencadenador **When a new email arrives (V3)**
 para el buzón `dacio.morales@outlook.com`. Filtrar remitente `automated@airbnb.com`
