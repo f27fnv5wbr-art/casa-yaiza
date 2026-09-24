@@ -1,6 +1,12 @@
 -- PV registration requirements and adult-to-minor relationships.
 -- Run after 003_v2_2_guest_registration.sql. Do not deploy the matching UI
 -- until the official TIPO_PARENTESCO codes are loaded into this table.
+-- Existing reservations retain null RH contact fields until the owner edits them.
+alter table public.reservations add column if not exists holder_first_name text;
+alter table public.reservations add column if not exists holder_surname1 text;
+alter table public.reservations add column if not exists holder_phone text;
+alter table public.reservations add column if not exists holder_email text;
+
 alter table public.guests add column if not exists postal_code text;
 alter table public.guests add column if not exists municipality_code text;
 alter table public.guests add column if not exists minor_relationships jsonb not null default '{}'::jsonb;
