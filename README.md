@@ -28,3 +28,6 @@ Next.js + Supabase SSR guest registration flow for Casa Yaiza.
 The public browser never receives a service-role key. Guest access is bearer-token based; only SHA-256 of the token is stored in `reservations`. RLS continues to protect owner data. The submission RPC validates the token and guest counts before writing.
 
 Before using real guest data, complete the legal/privacy text, retention policy, production backup/access policy, and final SES.Hospedajes payload validation.
+
+## Mantenimiento
+Ver [docs/mantenimiento.md](docs/mantenimiento.md) para comprobaciones automáticas, avisos y recuperación.
