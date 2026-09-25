@@ -3,7 +3,7 @@
  * Antes, definir AIRBNB_IMPORT_SECRET en Configuración del proyecto > Propiedades de secuencia.
  */
 const CASA_YAIZA_URL = 'https://casa-yaiza-wvsh.vercel.app/api/integrations/airbnb'
-const AIRBNB_QUERY = 'from:automated@airbnb.com subject:"Reservation confirmed" newer_than:30d'
+const AIRBNB_QUERY = '{from:automated@airbnb.com from:dacio.morales@outlook.com} subject:"Reservation confirmed" newer_than:30d'
 
 function configurar() {
   const properties = PropertiesService.getScriptProperties()
@@ -28,20 +28,30 @@ function importarReservas() {
   for (const thread of threads) {
     for (const message of thread.getMessages()) {
       const sender = message.getFrom().match(/<([^>]+)>/)?.[1] || message.getFrom()
-      if (sender.toLowerCase() !== 'automated@airbnb.com') continue
+      const forwarded = sender.toLowerCase() === 'dacio.morales@outlook.com' && /^FW:\s*Reservation confirmed/i.test(message.getSubject())
+      if (sender.toLowerCase() !== 'automated@airbnb.com' && !forwarded) continue
       if (!/reservation confirmed/i.test(message.getSubject())) continue
       if (message.getDate().getTime() < startedAt) continue
 
       const processedKey = 'imported_' + message.getId()
       if (properties.getProperty(processedKey)) continue
 
+      const body = forwarded ? message.getPlainBody() : message.getBody()
+      const original = forwarded && body.match(/^From:\s*Airbnb\s*<automated@airbnb\.com>[\s\S]*?^(?:Sent|Date):\s*([^\r\n]+)[\s\S]*?^Subject:\s*(Reservation confirmed[^\r\n]+)/mi)
+      if (forwarded && !original) continue
+      const originalDate = forwarded ? new Date(original[1].trim().replace(/\s+at\s+/i, ' ').replace(/(?:\s+UTC)?$/, ' UTC')) : message.getDate()
+      if (isNaN(originalDate.getTime())) {
+        console.error('Fecha original no reconocida: ' + message.getId())
+        continue
+      }
       const response = UrlFetchApp.fetch(CASA_YAIZA_URL, {
         method: 'post',
         contentType: 'application/json',
         headers: { Authorization: 'Bearer ' + secret },
         payload: JSON.stringify({
-          from: sender, subject: message.getSubject(), body: message.getBody(),
-          receivedAt: message.getDate().toISOString(),
+          from: forwarded ? 'automated@airbnb.com' : sender,
+          subject: forwarded ? original[2].trim() : message.getSubject(), body: body,
+          receivedAt: originalDate.toISOString(),
         }),
         muteHttpExceptions: true,
       })
@@ -63,16 +73,15 @@ function importarReenviosAnteriores() {
   const secret = properties.getProperty('AIRBNB_IMPORT_SECRET')
   if (!secret) throw new Error('Falta AIRBNB_IMPORT_SECRET.')
 
-  const threads = GmailApp.search('from:dacio.morales@outlook.com subject:"FW: Reservation confirmed" newer_than:7d', 0, 20)
+  const threads = GmailApp.search('from:dacio.morales@outlook.com subject:"FW: Reservation confirmed" newer_than:30d', 0, 100)
   let matched = 0
   for (const thread of threads) {
     for (const message of thread.getMessages()) {
       const body = message.getPlainBody()
-      if (!body.includes('HM4Z3BBD9Z')) continue
-      const original = body.match(/^From:\s*Airbnb\s*<automated@airbnb\.com>[\s\S]*?^Sent:\s*([^\r\n]+)[\s\S]*?^Subject:\s*(Reservation confirmed[^\r\n]+)/mi)
+      const original = body.match(/^From:\s*Airbnb\s*<automated@airbnb\.com>[\s\S]*?^(?:Sent|Date):\s*([^\r\n]+)[\s\S]*?^Subject:\s*(Reservation confirmed[^\r\n]+)/mi)
       if (!original) continue
       matched++
-      const sent = new Date(original[1].trim() + ' UTC')
+      const sent = new Date(original[1].trim().replace(/\s+at\s+/i, ' ') + ' UTC')
       if (isNaN(sent.getTime())) throw new Error('No se reconoció la fecha original del correo.')
 
       const response = UrlFetchApp.fetch(CASA_YAIZA_URL, {

@@ -19,8 +19,13 @@ function toText(body: string) {
     .replace(/\r/g, '')
 }
 
-function date(value: string) {
-  const parsed = new Date(`${value.replace(/\s+/g, ' ').trim()} 12:00:00 GMT`)
+function date(value: string, reference: Date) {
+  const normalized = value.replace(/\s+/g, ' ').trim().replace(/,?\s+\d{4}$/, '')
+  const explicitYear = value.match(/\b(20\d{2})\b/)?.[1]
+  const year = explicitYear ? Number(explicitYear) : reference.getUTCFullYear()
+  const parse = (candidate: number) => new Date(`${normalized} ${candidate} 12:00:00 GMT`)
+  let parsed = parse(year)
+  if (!explicitYear && parsed.getTime() < reference.getTime() - 86400000) parsed = parse(year + 1)
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10)
 }
 
@@ -35,14 +40,14 @@ export function parseAirbnbConfirmation(subject: string, body: string, receivedA
     || body.match(/\/hosting\/reservations\/details\/([A-Z0-9]{10})/i)?.[1]
   const guest = subject.match(/reservation confirmed\s*[-–]\s*(.+?)\s+arrives\b/i)?.[1]
     || text.match(/new booking confirmed!\s*(.+?)\s+arrives\b/i)?.[1]
-  const checkIn = text.match(/check-in[^a-z0-9]{0,60}((?:mon|tue|wed|thu|fri|sat|sun)[a-z]*,?\s+[a-z]+\s+\d{1,2},?\s+\d{4})/i)?.[1]
-  const checkOut = text.match(/check\s*out[^a-z0-9]{0,60}((?:mon|tue|wed|thu|fri|sat|sun)[a-z]*,?\s+[a-z]+\s+\d{1,2},?\s+\d{4})/i)?.[1]
+  const checkIn = text.match(/check-in[^a-z0-9]{0,60}((?:mon|tue|wed|thu|fri|sat|sun)[a-z]*,?\s+[a-z]+\s+\d{1,2}(?:,?\s+\d{4})?)/i)?.[1]
+  const checkOut = text.match(/check\s*out[^a-z0-9]{0,60}((?:mon|tue|wed|thu|fri|sat|sun)[a-z]*,?\s+[a-z]+\s+\d{1,2}(?:,?\s+\d{4})?)/i)?.[1]
   const adults = Number(text.match(/\b(\d{1,2})\s+adults?\b/i)?.[1] || 0)
   const children = Number(text.match(/\b(\d{1,2})\s+children\b/i)?.[1] || 0)
   const name = guest?.trim().split(/\s+/)
-  const arrival = checkIn && date(checkIn)
-  const departure = checkOut && date(checkOut)
   const formalized = new Date(receivedAt)
+  const arrival = checkIn && date(checkIn, formalized)
+  const departure = checkOut && date(checkOut, arrival ? new Date(`${arrival}T00:00:00Z`) : formalized)
 
   if (!code || !name || name.length < 2 || !arrival || !departure || departure <= arrival ||
     !adults || adults + children > 30 || Number.isNaN(formalized.getTime())) return null

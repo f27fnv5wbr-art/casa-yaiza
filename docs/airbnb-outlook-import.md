@@ -17,7 +17,7 @@ código de reserva. Una segunda entrega del mismo código devuelve `already_exis
 ## Outlook.com personal → Gmail → Casa Yaiza
 
 En Outlook web, crear una regla con la condición **De** `automated@airbnb.com`
-y la acción **Redirigir a** `daciomb@gmail.com`. La redirección preserva el
+y la acción **Redirigir a** `daciomb@gmail.com`. La redirección suele preservar el
 remitente original; no activar el reenvío de todo el buzón. Gmail recibirá
 solo las confirmaciones que cumplan la regla (y otros correos de Airbnb de
 ese remitente, que el importador descartará por asunto y contenido).
@@ -27,7 +27,7 @@ En [Google Apps Script](https://script.google.com/), crear un proyecto y pegar
 Propiedades de secuencia**, crear `AIRBNB_IMPORT_SECRET` con el mismo secreto
 guardado en Vercel. Ejecutar `configurar()` una vez y aprobar los permisos
 Gmail, solicitudes externas y disparadores. El script comprueba los mensajes
-cada cinco minutos, registra los ya importados y reintenta los errores.
+cada cinco minutos, acepta también reenvíos «FW» desde `dacio.morales@outlook.com` con cabecera original de Airbnb, registra los ya importados y reintenta los errores. Para los reenvíos manuales, usa la fecha original de Airbnb para la fecha del contrato.
 El código de reserva único protege también contra duplicados por entregas
 repetidas. `configurar()` fija el momento inicial para no importar mensajes
 anteriores sin una revisión explícita.
@@ -63,6 +63,4 @@ Respuesta `201`: reserva creada, incluye `guest_url`. Respuesta `200` con
 que requiere revisión manual. Conviene enviar el enlace `guest_url` solo al
 propietario, para compartirlo después por el canal de Airbnb.
 
-Para importar la confirmación ya recibida de Karsten, se puede ejecutar el flujo
-una vez sobre ese mensaje o invocar la ruta con sus datos, después de configurar
-las variables. El flujo de llegada solo cubre mensajes nuevos.
+Para revisar confirmaciones históricas reenviadas, ejecutar una vez `importarReenviosAnteriores()`. Reprocesar un código ya existente devuelve `already_exists`; el índice único de la migración 008 es imprescindible. El disparador periódico solo examina mensajes posteriores a `configurar()` y hasta 30 días de antigüedad.
