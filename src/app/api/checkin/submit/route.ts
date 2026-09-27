@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { hashToken } from '@/lib/token'
+import municipalities from '@/lib/municipalities-ine-2026.json'
+
+const municipalityByCode = new Map(municipalities.map(([code,name]) => [code,name]))
 
 const guest = z.object({
   role: z.enum(['holder','adult','minor']), firstName: z.string().min(1).max(100), surname1: z.string().min(1).max(100),
@@ -23,7 +26,7 @@ export async function POST(req: Request) {
     }
     for (let index = 0; index < guests.length; index++) {
       const g = guests[index]
-      if (!g.address.trim() || !g.postalCode.trim() || !g.country || (g.role !== 'minor' && !g.phone.trim()) || (g.country === 'ESP' ? !/^\d{5}$/.test(g.municipalityCode) : !g.locality.trim())) {
+      if (!g.address.trim() || !g.postalCode.trim() || !g.country || (g.role !== 'minor' && !g.phone.trim()) || (g.country === 'ESP' ? !municipalityByCode.has(g.municipalityCode) : !g.locality.trim())) {
         return NextResponse.json({ error: `Domicilio o contacto incompleto para el viajero ${index + 1}.` }, { status: 400 })
       }
       if (g.role !== 'minor' && (!g.documentType || !g.documentNumber.trim() || !g.signatureData || !g.nationality || (g.documentType === 'NIF' && !g.surname2.trim()) || (['NIF','NIE'].includes(g.documentType) && !g.documentSupport.trim()))) {
@@ -39,7 +42,7 @@ export async function POST(req: Request) {
       const { data: codes, error: catalogError } = await supabase.from('ses_relationship_types').select('code').in('code', relationshipCodes)
       if (catalogError || codes?.length !== relationshipCodes.length) return NextResponse.json({ error: 'Parentesco no válido en el catálogo SES.' }, { status: 400 })
     }
-    const { data, error } = await supabase.rpc('submit_guest_registration', { token_hash: hashToken(body.token), payload: { totalGuests: body.totalGuests, adultCount: body.adultCount, minorCount: body.minorCount, guests: body.guests } })
+    const { data, error } = await supabase.rpc('submit_guest_registration', { token_hash: hashToken(body.token), payload: { totalGuests: body.totalGuests, adultCount: body.adultCount, minorCount: body.minorCount, guests: guests.map(g => g.country === 'ESP' ? {...g,locality:municipalityByCode.get(g.municipalityCode)} : g) } })
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     return NextResponse.json(data)
   } catch (e: any) {
