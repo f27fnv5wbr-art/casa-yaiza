@@ -68,6 +68,7 @@ function LoginForm() {
             {loading ? 'Entrando…' : 'Entrar'}
           </button>
         </form>
+        <p><a href="/?recover=1">¿Has olvidado tu contraseña?</a></p>
       </section>
     </main>
   )
