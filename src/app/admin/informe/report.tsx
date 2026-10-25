@@ -14,7 +14,7 @@ type Guest = {
 type Reservation = {
   id: string; booking_code: string; holder_name: string; holder_first_name: string | null
   holder_surname1: string | null; holder_phone: string | null; holder_email: string | null
-  check_in: string; check_out: string; guest_count: number; status: string; guests: Guest[]
+  contract_date: string; check_in: string; check_out: string; guest_count: number; status: string; guests: Guest[]
 }
 
 const roleName: Record<string, string> = { holder: 'Titular', adult: 'Adulto', minor: 'Menor' }
@@ -51,7 +51,7 @@ export default function Report({ reservations }: { reservations: Reservation[] }
     <div className="reportSummary"><strong>{filtered.length}</strong> reservas <strong>{guestTotal}</strong> huéspedes registrados</div>
     {filtered.map(r => <section className="card reportReservation" key={r.id}>
       <div className="reportHeading"><div><h2>Reserva {r.booking_code}</h2><p>{date(r.check_in)} → {date(r.check_out)} · {r.holder_name}</p></div><span className="badge">{statusName[r.status] ?? r.status}</span></div>
-      <div className="reportMeta"><Detail label="Huéspedes previstos" value={String(r.guest_count)} /><Detail label="Registrados" value={String(r.guests.length)} /><Detail label="Teléfono titular" value={r.holder_phone} /><Detail label="Email titular" value={r.holder_email} /></div>
+      <div className="reportMeta"><Detail label="Fecha de reserva" value={date(r.contract_date)} /><Detail label="Huéspedes previstos" value={String(r.guest_count)} /><Detail label="Registrados" value={String(r.guests.length)} /><Detail label="Teléfono titular" value={r.holder_phone} /><Detail label="Email titular" value={r.holder_email} /></div>
       {r.guests.length === 0 ? <p className="muted">Todavía no hay datos de huéspedes.</p> :
         [...r.guests].sort((a, b) => ({ holder: 0, adult: 1, minor: 2 }[a.role] ?? 3) - ({ holder: 0, adult: 1, minor: 2 }[b.role] ?? 3)).map((g, index) => <details className="reportGuest" key={g.id} open>
           <summary><span className="badge">{roleName[g.role] ?? g.role}</span> {show([g.first_name, g.surname1, g.surname2].filter(Boolean).join(' '))}<small>{g.completed ? 'Completo' : 'Pendiente'}</small></summary>
