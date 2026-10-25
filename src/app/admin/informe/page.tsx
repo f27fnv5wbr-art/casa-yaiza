@@ -10,7 +10,7 @@ export default async function GuestReportPage() {
 
   const { data, error } = await supabase
     .from('reservations')
-    .select(`id,booking_code,holder_name,holder_first_name,holder_surname1,holder_phone,holder_email,check_in,check_out,guest_count,status,
+    .select(`id,booking_code,holder_name,holder_first_name,holder_surname1,holder_phone,holder_email,contract_date,check_in,check_out,guest_count,status,
       guests(id,role,first_name,surname1,surname2,sex,birth_date,nationality,document_type,document_number,document_support,address,locality,postal_code,municipality_code,country,phone,email,minor_relationships,completed,signature_path,signature_data,created_at)`)
     .eq('owner_id', user.id)
     .order('check_in', { ascending: false })
