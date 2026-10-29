@@ -28,7 +28,7 @@ function importarReservas() {
   for (const thread of threads) {
     for (const message of thread.getMessages()) {
       const sender = message.getFrom().match(/<([^>]+)>/)?.[1] || message.getFrom()
-      const forwarded = sender.toLowerCase() === 'dacio.morales@outlook.com' && /^FW:\s*Reservation confirmed/i.test(message.getSubject())
+      const forwarded = sender.toLowerCase() === 'dacio.morales@outlook.com' && /^(?:FW|RV):\s*Reservation confirmed/i.test(message.getSubject())
       if (sender.toLowerCase() !== 'automated@airbnb.com' && !forwarded) continue
       if (!/reservation confirmed/i.test(message.getSubject())) continue
       if (message.getDate().getTime() < startedAt) continue
@@ -37,9 +37,9 @@ function importarReservas() {
       if (properties.getProperty(processedKey)) continue
 
       const body = forwarded ? message.getPlainBody() : message.getBody()
-      const original = forwarded && body.match(/^From:\s*Airbnb\s*<automated@airbnb\.com>[\s\S]*?^(?:Sent|Date):\s*([^\r\n]+)[\s\S]*?^Subject:\s*(Reservation confirmed[^\r\n]+)/mi)
+      const original = forwarded && body.match(/^(?:From|De):\s*Airbnb\s*<automated@airbnb\.com>[\s\S]*?^(?:Sent|Date|Enviado|Fecha):\s*([^\r\n]+)[\s\S]*?^(?:Subject|Asunto):\s*(Reservation confirmed[^\r\n]+)/mi)
       if (forwarded && !original) continue
-      const originalDate = forwarded ? new Date(original[1].trim().replace(/\s+at\s+/i, ' ').replace(/(?:\s+UTC)?$/, ' UTC')) : message.getDate()
+      const originalDate = forwarded ? fechaOriginalAirbnb(original[1]) : message.getDate()
       if (isNaN(originalDate.getTime())) {
         console.error('Fecha original no reconocida: ' + message.getId())
         continue
@@ -73,15 +73,17 @@ function importarReenviosAnteriores() {
   const secret = properties.getProperty('AIRBNB_IMPORT_SECRET')
   if (!secret) throw new Error('Falta AIRBNB_IMPORT_SECRET.')
 
-  const threads = GmailApp.search('from:dacio.morales@outlook.com subject:"FW: Reservation confirmed" newer_than:30d', 0, 100)
+  const threads = GmailApp.search('from:dacio.morales@outlook.com subject:"Reservation confirmed" newer_than:30d', 0, 100)
   let matched = 0
   for (const thread of threads) {
     for (const message of thread.getMessages()) {
+      const sender = message.getFrom().match(/<([^>]+)>/)?.[1] || message.getFrom()
+      if (sender.toLowerCase() !== 'dacio.morales@outlook.com' || !/^(?:FW|RV):\s*Reservation confirmed/i.test(message.getSubject())) continue
       const body = message.getPlainBody()
-      const original = body.match(/^From:\s*Airbnb\s*<automated@airbnb\.com>[\s\S]*?^(?:Sent|Date):\s*([^\r\n]+)[\s\S]*?^Subject:\s*(Reservation confirmed[^\r\n]+)/mi)
+      const original = body.match(/^(?:From|De):\s*Airbnb\s*<automated@airbnb\.com>[\s\S]*?^(?:Sent|Date|Enviado|Fecha):\s*([^\r\n]+)[\s\S]*?^(?:Subject|Asunto):\s*(Reservation confirmed[^\r\n]+)/mi)
       if (!original) continue
       matched++
-      const sent = new Date(original[1].trim().replace(/\s+at\s+/i, ' ') + ' UTC')
+      const sent = fechaOriginalAirbnb(original[1])
       if (isNaN(sent.getTime())) throw new Error('No se reconoció la fecha original del correo.')
 
       const response = UrlFetchApp.fetch(CASA_YAIZA_URL, {
@@ -102,4 +104,23 @@ function importarReenviosAnteriores() {
     }
   }
   if (!matched) console.log('No se encontró el reenvío de la reserva HM4Z3BBD9Z en Gmail.')
+}
+
+
+/** Normaliza las cabeceras de Outlook en español; conserva la convención UTC existente. */
+function fechaOriginalAirbnb(value) {
+  const spanish = value.trim().match(/^(?:[a-záéíóúüñ]+,?\s+)?(\d{1,2}) de ([a-z]+) de (20\d{2}) (\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i)
+  if (spanish) {
+    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+    const month = months.indexOf(spanish[2].toLowerCase())
+    let hour = Number(spanish[4])
+    const minute = Number(spanish[5]), second = Number(spanish[6] || 0)
+    const period = spanish[7]?.toLowerCase()
+    if (month < 0 || minute > 59 || second > 59 || (period ? hour < 1 || hour > 12 : hour > 23)) return new Date(NaN)
+    if (period) hour = hour % 12 + (period === 'pm' ? 12 : 0)
+    const result = new Date(Date.UTC(Number(spanish[3]), month, Number(spanish[1]), hour, minute, second))
+    if (result.getUTCMonth() !== month || result.getUTCDate() !== Number(spanish[1])) return new Date(NaN)
+    return result
+  }
+  return new Date(value.trim().replace(/\s+at\s+/i, ' ').replace(/(?:\s+UTC)?$/, ' UTC'))
 }
